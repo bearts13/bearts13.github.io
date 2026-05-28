@@ -1,0 +1,27 @@
+title: bearts13's Blog
+description: 个人技术博客
+author: bearts13
+email: 
+lang: zh-CN
+timezone: Asia/Shanghai
+
+theme: minima
+
+minima:
+  skin: classic
+  date_format: "%Y-%m-%d"
+
+header_pages:
+  - about.md
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
+      comments: false
