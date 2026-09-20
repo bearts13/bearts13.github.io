@@ -1,0 +1,393 @@
+---
+import { Icon } from "astro-icon/components";
+import CoverImage from "@/components/common/CoverImage.astro";
+import { url } from "@/utils/url-utils";
+import { getSortedProjects } from "@/utils/content-utils";
+import { removeFileExtension, getFileDirFromPath } from "@/utils/url-utils";
+
+interface Props {
+	limit?: number;
+}
+
+const { limit = 3 } = Astro.props;
+
+const all = await getSortedProjects();
+const projects = all.slice(0, limit);
+
+// 按状态统计，用于顶部筛选标签
+const statusCount = new Map<string, number>();
+for (const p of all) {
+	const s = (p.data.status || "published") as string;
+	statusCount.set(s, (statusCount.get(s) || 0) + 1);
+}
+
+const STATUS_LABEL: Record<string, string> = {
+	published: "已发布",
+	developing: "开发中",
+	archived: "已归档",
+	planned: "计划中",
+};
+
+const filters = ["all", ...Array.from(statusCount.keys())].map((k) => ({
+	key: k,
+	label: k === "all" ? "全部" : STATUS_LABEL[k] || k,
+	count: k === "all" ? all.length : statusCount.get(k) || 0,
+}));
+
+const items = projects.map((p) => ({
+	id: removeFileExtension(p.id),
+	title: p.data.title,
+	description: p.data.description,
+	image: p.data.image,
+	basePath: getFileDirFromPath(p.filePath || ""),
+	status: (p.data.status || "published") as string,
+	statusLabel: STATUS_LABEL[(p.data.status || "published") as string] || "已发布",
+	tags: p.data.tags,
+}));
+
+const total = all.length;
+---
+
+<section class="home-projects onload-animation" data-home-projects>
+  <div class="hp-head">
+    <div class="hp-title">
+      <span class="hp-title-icon"><Icon name="material-symbols:rocket-launch" /></span>
+      <h2>我的项目</h2>
+    </div>
+    <a class="hp-more" href={url("/projects/")}>
+      查看全部
+      <Icon name="material-symbols:chevron-right-rounded" />
+    </a>
+  </div>
+
+  {filters.length > 1 && (
+    <div class="hp-tabs" role="tablist">
+      {filters.map((f, i) => (
+        <button
+          type="button"
+          class="hp-tab"
+          data-filter={f.key}
+          data-active={i === 0 ? "" : undefined}
+        >
+          {f.label}
+          <span class="hp-tab-count">{f.count}</span>
+        </button>
+      ))}
+    </div>
+  )}
+
+  <div class="hp-grid" data-hp-grid>
+    {items.map((p) => (
+      <a class="hp-card" href={url(`/projects/${p.id}/`)} data-status={p.status}>
+        <div class="hp-cover">
+          {p.image ? (
+            <CoverImage
+              src={p.image}
+              basePath={p.basePath}
+              alt={p.title}
+              class="w-full h-full object-cover"
+              preview={false}
+            />
+          ) : (
+            <div class="hp-cover-fallback">
+              <Icon name="material-symbols:rocket-launch" />
+            </div>
+          )}
+          <span class="hp-badge">{p.statusLabel}</span>
+        </div>
+        <div class="hp-body">
+          <h3 class="hp-card-title">{p.title}</h3>
+          {p.description && <p class="hp-desc">{p.description}</p>}
+        </div>
+      </a>
+    ))}
+
+    {total > limit && (
+      <a class="hp-card hp-card-more" href={url("/projects/")}>
+        <span class="hp-more-inner">
+          <Icon name="material-symbols:add-circle-outline-rounded" />
+          <span>还有 {total - limit} 个项目</span>
+        </span>
+      </a>
+    )}
+  </div>
+
+  <div class="hp-empty" data-hp-empty hidden>没有符合的项目</div>
+</section>
+
+<script is:inline>
+  (function () {
+    function initHomeProjects() {
+      document.querySelectorAll("[data-home-projects]").forEach(function (root) {
+        if (root.dataset.hpInit === "1") return;
+        root.dataset.hpInit = "1";
+
+        var tabs = root.querySelectorAll(".hp-tab");
+        var cards = root.querySelectorAll(".hp-card[data-status]");
+        var empty = root.querySelector("[data-hp-empty]");
+
+        tabs.forEach(function (tab) {
+          tab.addEventListener("click", function () {
+            var key = tab.dataset.filter;
+            tabs.forEach(function (t) { t.removeAttribute("data-active"); });
+            tab.setAttribute("data-active", "");
+
+            var shown = 0;
+            cards.forEach(function (card) {
+              var ok = key === "all" || card.dataset.status === key;
+              card.style.display = ok ? "" : "none";
+              if (ok) shown++;
+            });
+            if (empty) empty.hidden = shown > 0;
+          });
+        });
+      });
+    }
+
+    initHomeProjects();
+    document.addEventListener("astro:page-load", initHomeProjects);
+    document.addEventListener("astro:after-swap", initHomeProjects);
+  })();
+</script>
+
+<style is:global>
+  .home-projects {
+    margin-bottom: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--line-divider);
+    border-radius: var(--radius-large);
+    padding: 0.875rem 1rem 1rem;
+  }
+
+  /* 亮色主题下的文字色 */
+  .home-projects {
+    --hp-title: #1a1a1a;
+    --hp-sub: #5c5c5c;
+    --hp-dim: #8a8a8a;
+  }
+
+  /* 暗色主题下的文字色 */
+  :root.dark .home-projects {
+    --hp-title: rgba(255, 255, 255, 0.92);
+    --hp-sub: rgba(255, 255, 255, 0.62);
+    --hp-dim: rgba(255, 255, 255, 0.42);
+  }
+
+  .hp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0.625rem;
+  }
+
+  .hp-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .hp-title-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.5rem;
+    background: color-mix(in oklab, var(--primary) 16%, transparent);
+    color: var(--primary);
+    font-size: 1rem;
+  }
+
+  .hp-title h2 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--hp-title);
+  }
+
+  .hp-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.8125rem;
+    color: var(--hp-sub);
+    transition: color 0.2s;
+  }
+
+  .hp-more:hover {
+    color: var(--primary);
+  }
+
+  .hp-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.625rem;
+    border-bottom: 1px solid var(--line-divider);
+  }
+
+  .hp-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 0.2rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--hp-sub);
+    border: 1px solid var(--line-divider);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .hp-tab:hover {
+    color: var(--primary);
+    border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  }
+
+  .hp-tab[data-active] {
+    background: color-mix(in oklab, var(--primary) 14%, transparent);
+    border-color: transparent;
+    color: var(--primary);
+  }
+
+  .hp-tab-count {
+    font-size: 0.625rem;
+    opacity: 0.7;
+  }
+
+  /* 一行四个：宽屏 4 列，窄屏自动降列 */
+  .hp-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  @media (max-width: 1024px) {
+    .hp-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hp-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .hp-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: calc(var(--radius-large) - 0.25rem);
+    border: 1px solid var(--line-divider);
+    background: var(--card-bg);
+    transition: transform 0.25s, border-color 0.25s;
+  }
+
+  .hp-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--primary) 40%, transparent);
+  }
+
+  /* 矮封面：更扁的 21:9，压掉整体高度 */
+  .hp-cover {
+    position: relative;
+    aspect-ratio: 21 / 9;
+    overflow: hidden;
+    background: color-mix(in oklab, var(--line-divider) 60%, transparent);
+  }
+
+  .hp-cover :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s;
+  }
+
+  .hp-card:hover .hp-cover :global(img) {
+    transform: scale(1.06);
+  }
+
+  .hp-cover-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--hp-dim);
+    font-size: 1.25rem;
+  }
+
+  .hp-badge {
+    position: absolute;
+    top: 0.375rem;
+    right: 0.375rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 9999px;
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(6px);
+  }
+
+  .hp-body {
+    padding: 0.5rem 0.625rem 0.625rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1875rem;
+  }
+
+  .hp-card-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--hp-title);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 只留一行描述，进一步压高度 */
+  .hp-desc {
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    color: var(--hp-sub);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hp-card-more {
+    align-items: center;
+    justify-content: center;
+    border-style: dashed;
+    min-height: 5.5rem;
+  }
+
+  .hp-more-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--hp-sub);
+  }
+
+  .hp-more-inner :global(svg) {
+    font-size: 1.25rem;
+  }
+
+  .hp-empty {
+    text-align: center;
+    padding: 1rem 0;
+    font-size: 0.8125rem;
+    color: var(--hp-sub);
+  }
+</style>

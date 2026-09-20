@@ -1,27 +1,49 @@
-# Bundler cache
-.bundle
-vendor
-Gemfile.lock
+# build output
+dist/
 
-# Jekyll cache
-.jekyll-cache
-.jekyll-metadata
-_site
+# generated vndb covers
+public/vndb-covers/
 
-# RubyGems
-*.gem
+# generated types
+.astro/
 
-# NPM dependencies
-node_modules
+# dependencies
+node_modules/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+.vercel
+
 package-lock.json
+bun.lockb
+yarn.lock
 
-# IDE configurations
+# ide
 .idea
-.vscode/*
-!.vscode/settings.json
-!.vscode/extensions.json
-!.vscode/tasks.json
+*.iml
 
-# Misc
-_sass/vendors
-assets/js/dist
+# docs
+Firefly-docs/
+
+# lite 版本
+Firefly-Lite/
+
+cache/
+package/
+.obsidian/
+
+# vibe coding
+.codex*
+.claude
+.mimocode
