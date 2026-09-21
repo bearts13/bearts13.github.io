@@ -24,9 +24,9 @@ export async function GET(context: APIContext): Promise<Response> {
 		description: siteConfig.subtitle || "No description",
 		site: context.site ?? "https://firefly.cuteleaf.cn",
 		customData: `<templateTheme>Firefly</templateTheme>
-		<templateThemeVersion>${pkg.version}</templateThemeVersion>
-		<templateThemeUrl>https://github.com/CuteLeaf/Firefly</templateThemeUrl>
-		<lastBuildDate>${formatDateI18nWithTime(new Date())}</lastBuildDate>`,
+      <templateThemeVersion>${pkg.version}</templateThemeVersion>
+      <templateThemeUrl>https://github.com/CuteLeaf/Firefly</templateThemeUrl>
+      <lastBuildDate>${formatDateI18nWithTime(new Date())}</lastBuildDate>`,
 		items: feedItems,
 	});
 }

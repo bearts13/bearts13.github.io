@@ -1,0 +1,43 @@
+---
+/**
+ * 旧订阅地址 /rss.xml 的兼容跳转页。
+ *
+ * 背景：这次改版把订阅地址统一成了 /feed.xml（与原先 Jekyll/Chirpy 的 feed.xml 一致），
+ * 但 /rss.xml 已经对外露过面，直接 404 会丢掉老订阅者。GitHub Pages 是纯静态托管，
+ * 没有服务端可以做 301，因此退而求其次输出一个静态跳转页：meta refresh + canonical。
+ *
+ * 注意：这个文件必须叫 `rss.xml/index.astro` 而不是 `rss.xml.astro`。
+ * 因为站点配置了 trailingSlash: "always"，Astro 会把 `rss.xml.astro` 编译成
+ * `dist/rss.xml/index.html`（URL 为 /rss.xml/），而老地址 /rss.xml 没有斜杠会 404。
+ * 用目录形式才能产出 `dist/rss.xml.html`，正好被 GitHub Pages 作为 /rss.xml 提供。
+ */
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+
+const target = new URL("feed.xml", Astro.site ?? Astro.url).href;
+---
+
+<MainGridLayout
+    title="RSS"
+    description="订阅地址已迁移，正在跳转"
+    canonicalUrl={target}
+>
+    <meta http-equiv="refresh" content={`0;url=${target}`} />
+    <div class="onload-animation">
+        <div class="card-base rounded-(--radius-large) p-8 mb-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-(--primary) mb-3">
+                    订阅地址已更新
+                </div>
+                <p class="text-75 mb-5">
+                    订阅地址已从 <code>/rss.xml</code> 更改为 <code>/feed.xml</code>，正在为你跳转……
+                </p>
+                <a
+                    href={target}
+                    class="inline-block px-5 py-2 bg-(--primary) text-white rounded-lg hover:opacity-80 transition-all duration-200 font-medium break-all"
+                >
+                    手动前往 {target}
+                </a>
+            </div>
+        </div>
+    </div>
+</MainGridLayout>
